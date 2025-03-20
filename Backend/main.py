@@ -65,10 +65,12 @@ def estimate_thread_count(image):
     """Simple estimation of thread count based on image texture (placeholder)."""
     width, height = image.size
     return int((width * height) / 10000)  # Approximation
-
 def process_frame(image):
-    """Process image and return defect details along with material, color, and thread count."""
+    """Processes an image to detect defects, material, color, and thread count."""
     try:
+        if not image:
+            raise ValueError("Invalid image input")
+
         image = image.resize((800, 600))
 
         with CLIENT.use_configuration(custom_configuration):
@@ -76,39 +78,40 @@ def process_frame(image):
 
         processed_image = draw_bounding_boxes(image, result)
 
-        total_area = image.size[0] * image.size[1]
-        defect_area = sum(prediction['width'] * prediction['height'] for prediction in result.get('predictions', []))
-        defect_percentage = (defect_area / total_area) * 100
+        # Calculate defect percentage
+        total_area = image.width * image.height
+        defect_area = sum(pred['width'] * pred['height'] for pred in result.get('predictions', []))
+        defect_percentage = (defect_area / total_area) * 100 if total_area else 0
 
-        # Ensure these functions return default values if they fail
-        material = detect_material(image) if image else "Unknown"
-        dominant_color = get_dominant_color(image) if image else "Not detected"
-        thread_count = estimate_thread_count(image) if image else "N/A"
+        # Extract material, color, and thread count with safe defaults
+        material = detect_material(image) or "Unknown"
+        dominant_color = get_dominant_color(image) or "Not detected"
+        thread_count = estimate_thread_count(image) or "N/A"
 
+        # Convert processed image to base64
         buffered = io.BytesIO()
         processed_image.save(buffered, format="JPEG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
         return {
-            "image": img_str, 
-            "defect_percentage": defect_percentage, 
-            "detections": result.get('predictions', []),
+            "image": img_str,
+            "defect_percentage": round(defect_percentage, 2),
+            "detections": result.get("predictions", []),
             "material": material,
             "color": dominant_color,
-            "thread_count": thread_count
+            "thread_count": thread_count,
         }
     except Exception as e:
-        print(f"Error in process_frame: {e}")  # ✅ Log error for debugging
+        print(f"[ERROR] process_frame: {e}")  # Improved error logging
         return {
-            "image": None, 
-            "defect_percentage": 0, 
+            "image": None,
+            "defect_percentage": 0,
             "detections": [],
             "material": "Unknown",
             "color": "Not detected",
             "thread_count": "N/A",
-            "error": str(e)
+            "error": str(e),
         }
-
 def draw_bounding_boxes(image, result):
     """Draw bounding boxes on an image and return it."""
     draw = ImageDraw.Draw(image)

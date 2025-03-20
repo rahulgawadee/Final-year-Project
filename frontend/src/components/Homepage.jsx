@@ -29,7 +29,7 @@ const Homepage = () => {
       name: "Vrushali More",
       image: "src/assets/Vrushali.jpg",
       role: "Final Year CSE Student",
-      description: "Specialized in MERN stack, Ex-Intern Zealits Solution, Pune",
+      description: "Specialized in MERN stack,Intern at Zealits Solution Pvt.Ltd,Pune",
       linkedin: "https://www.linkedin.com",
       github: "https://www.github.com"
     },
